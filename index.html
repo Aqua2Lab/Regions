@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Regions Guidance Tool V2</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;font-family:Arial,Helvetica,sans-serif;background:#f4f6f5;color:#111827}
+body{overflow:hidden}
+.app{max-width:560px;margin:0 auto;height:100vh;display:flex;flex-direction:column;background:#f4f6f5}
+.header{background:white;border-bottom:1px solid #ddd;padding:8px 10px}
+.header h1{font-size:17px;margin:0}
+.header p{font-size:12px;margin:2px 0 0;color:#667085}
+input.nav{position:absolute;opacity:0;pointer-events:none}
+.top{height:44vh;overflow:auto;padding:10px}
+.output{height:56vh;background:white;margin:0 10px 10px;border:1px solid #ddd;border-radius:14px;padding:12px;overflow:auto}
+.menu{display:none;grid-template-columns:1fr 1fr;gap:8px}
+.setup{grid-column:1/-1;background:white;border:1px solid #d0d5dd;border-radius:13px;padding:10px;display:grid;gap:7px}
+.setup label{font-size:12px;font-weight:800;color:#344054}
+.setup input{width:100%;padding:10px;border:1px solid #d0d5dd;border-radius:10px;font-size:15px}
+.branch{font-size:13px;background:#f0fdf4;border-left:4px solid #007a3d;padding:7px;border-radius:8px}
+label.btn,.suggest label{
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  min-height:48px;padding:9px;border-radius:11px;background:#007a3d;color:white;
+  font-size:14px;font-weight:800;line-height:1.15;box-shadow:0 1px 4px rgba(0,0,0,.08)
+}
+label.gray,.suggest label.gray{background:#344054}
+label.gold,.suggest label.gold{background:#8a5a00}
+label.red,.suggest label.red{background:#9f1239}
+label.blue,.suggest label.blue{background:#175cd3}
+.script{display:none}
+.script h2{font-size:18px;margin:0 0 8px;color:#063}
+.script h3{font-size:15px;margin:12px 0 5px;color:#344054}
+.script p,.script li{font-size:15.5px;line-height:1.38}
+.script p{white-space:pre-line;margin:0 0 8px}
+.script ul{margin:6px 0 8px 18px;padding:0}
+.stop{background:#fff7ed;border-left:4px solid #f97316;padding:8px;border-radius:8px;margin:8px 0;font-size:14px}
+.smart{background:#eff6ff;border-left:4px solid #175cd3;padding:8px;border-radius:8px;margin:10px 0;font-size:14px}
+.smart b{display:block;margin-bottom:5px;color:#175cd3}
+.suggest{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:7px}
+.placeholder h2{font-size:18px;margin:0 0 8px}
+.placeholder p{font-size:15px;color:#667085;margin:0}
+.output .placeholder{display:none}
+.namechip{font-weight:800;color:#063}
+
+/* Menus */
+#start:checked ~ .top .startMenu,
+#custCtx:checked ~ .top .custCtxMenu,
+#prosCtx:checked ~ .top .prosCtxMenu,
+#custOfferCall:checked ~ .top .custOfferCallMenu,
+#custNoOfferCall:checked ~ .top .custNoOfferCallMenu,
+#prosOfferCall:checked ~ .top .prosOfferCallMenu,
+#prosNoOfferCall:checked ~ .top .prosNoOfferCallMenu,
+#custLive:checked ~ .top .custLiveMenu,
+#prosLive:checked ~ .top .prosLiveMenu,
+#greenMenu:checked ~ .top .greenMenu,
+#objectionMenu:checked ~ .top .objectionMenu,
+#closeMenu:checked ~ .top .closeMenu,
+#dispositionMenu:checked ~ .top .dispositionMenu{display:grid}
+
+/* keep menus */
+#custOfferVM:checked ~ .top .custOfferCallMenu,
+#custNoOfferVM:checked ~ .top .custNoOfferCallMenu,
+#prosOfferVM:checked ~ .top .prosOfferCallMenu,
+#prosNoOfferVM:checked ~ .top .prosNoOfferCallMenu,
+#followVM:checked ~ .top .closeMenu,
+#custGreet:checked ~ .top .custLiveMenu,
+#prosGreet:checked ~ .top .prosLiveMenu,
+#custPosition:checked ~ .top .custLiveMenu,
+#prosPosition:checked ~ .top .prosLiveMenu,
+#verification:checked ~ .top .custLiveMenu,
+#greenprint:checked ~ .top .greenMenu,
+#answerQuestions:checked ~ .top .greenMenu,
+#providingSolutions:checked ~ .top .greenMenu,
+#closingConsent:checked ~ .top .closeMenu,
+#appointment:checked ~ .top .closeMenu,
+#betterTime:checked ~ .top .objectionMenu,
+#otherObjection:checked ~ .top .objectionMenu,
+#optOut:checked ~ .top .objectionMenu,
+#restrictions:checked ~ .top .objectionMenu,
+#disposeGuide:checked ~ .top .dispositionMenu,
+#nbaReminder:checked ~ .top .dispositionMenu{display:grid}
+
+/* placeholder */
+#start:checked ~ .output .placeholder,
+#custCtx:checked ~ .output .placeholder,
+#prosCtx:checked ~ .output .placeholder,
+#custOfferCall:checked ~ .output .placeholder,
+#custNoOfferCall:checked ~ .output .placeholder,
+#prosOfferCall:checked ~ .output .placeholder,
+#prosNoOfferCall:checked ~ .output .placeholder,
+#custLive:checked ~ .output .placeholder,
+#prosLive:checked ~ .output .placeholder,
+#greenMenu:checked ~ .output .placeholder,
+#objectionMenu:checked ~ .output .placeholder,
+#closeMenu:checked ~ .output .placeholder,
+#dispositionMenu:checked ~ .output .placeholder{display:block}
+
+/* scripts */
+#custOfferVM:checked ~ .output .custOfferVM,
+#custNoOfferVM:checked ~ .output .custNoOfferVM,
+#prosOfferVM:checked ~ .output .prosOfferVM,
+#prosNoOfferVM:checked ~ .output .prosNoOfferVM,
+#followVM:checked ~ .output .followVM,
+#custGreet:checked ~ .output .custGreet,
+#prosGreet:checked ~ .output .prosGreet,
+#custPosition:checked ~ .output .custPosition,
+#prosPosition:checked ~ .output .prosPosition,
+#verification:checked ~ .output .verification,
+#greenprint:checked ~ .output .greenprint,
+#answerQuestions:checked ~ .output .answerQuestions,
+#providingSolutions:checked ~ .output .providingSolutions,
+#closingConsent:checked ~ .output .closingConsent,
+#appointment:checked ~ .output .appointment,
+#betterTime:checked ~ .output .betterTime,
+#otherObjection:checked ~ .output .otherObjection,
+#optOut:checked ~ .output .optOut,
+#restrictions:checked ~ .output .restrictions,
+#disposeGuide:checked ~ .output .disposeGuide,
+#nbaReminder:checked ~ .output .nbaReminder{display:block}
+
+.helper{
+color:#b54708;
+font-style:italic;
+background:#fff7ed;
+padding:4px 6px;
+border-radius:6px;
+display:block;
+margin:4px 0;
+font-weight:700;
+}
+
+
+.backBtn{
+position:fixed;
+top:8px;
+right:8px;
+background:#344054;
+color:white;
+border:none;
+border-radius:8px;
+padding:6px 10px;
+font-size:12px;
+font-weight:700;
+z-index:999;
+}
+
+</style>
+</head>
+<body>
+<div class="app"><button class="backBtn" style="display:none"></button>
+  <div class="header">
+    <h1>Regions Guidance Tool V2</h1>
+    <p>Uses customer name + banker name. Branch: Chaulkville Branch of Regions.</p>
+  </div>
+
+  <input class="nav" type="radio" name="screen" id="start" checked>
+  <input class="nav" type="radio" name="screen" id="custCtx">
+  <input class="nav" type="radio" name="screen" id="prosCtx">
+  <input class="nav" type="radio" name="screen" id="custOfferCall">
+  <input class="nav" type="radio" name="screen" id="custNoOfferCall">
+  <input class="nav" type="radio" name="screen" id="prosOfferCall">
+  <input class="nav" type="radio" name="screen" id="prosNoOfferCall">
+  <input class="nav" type="radio" name="screen" id="custLive">
+  <input class="nav" type="radio" name="screen" id="prosLive">
+  <input class="nav" type="radio" name="screen" id="greenMenu">
+  <input class="nav" type="radio" name="screen" id="objectionMenu">
+  <input class="nav" type="radio" name="screen" id="closeMenu">
+  <input class="nav" type="radio" name="screen" id="dispositionMenu">
+
+  <input class="nav" type="radio" name="screen" id="custOfferVM">
+  <input class="nav" type="radio" name="screen" id="custNoOfferVM">
+  <input class="nav" type="radio" name="screen" id="prosOfferVM">
+  <input class="nav" type="radio" name="screen" id="prosNoOfferVM">
+  <input class="nav" type="radio" name="screen" id="followVM">
+  <input class="nav" type="radio" name="screen" id="custGreet">
+  <input class="nav" type="radio" name="screen" id="prosGreet">
+  <input class="nav" type="radio" name="screen" id="custPosition">
+  <input class="nav" type="radio" name="screen" id="prosPosition">
+  <input class="nav" type="radio" name="screen" id="verification">
+  <input class="nav" type="radio" name="screen" id="greenprint">
+  <input class="nav" type="radio" name="screen" id="answerQuestions">
+  <input class="nav" type="radio" name="screen" id="providingSolutions">
+  <input class="nav" type="radio" name="screen" id="closingConsent">
+  <input class="nav" type="radio" name="screen" id="appointment">
+  <input class="nav" type="radio" name="screen" id="betterTime">
+  <input class="nav" type="radio" name="screen" id="otherObjection">
+  <input class="nav" type="radio" name="screen" id="optOut">
+  <input class="nav" type="radio" name="screen" id="restrictions">
+  <input class="nav" type="radio" name="screen" id="disposeGuide">
+  <input class="nav" type="radio" name="screen" id="nbaReminder">
+
+  <div class="top">
+    <div class="menu startMenu">
+      <div class="setup">
+        <label for="customerNameInput">Customer / Prospect Name</label>
+        <input id="customerNameInput" type="text" placeholder="Enter customer name">
+        <label for="bankerNameInput">Banker Name</label>
+        <input id="bankerNameInput" type="text" placeholder="Varun" value="Varun">
+        <div class="branch">Branch used in scripts: <b>Chaulkville Branch of Regions</b></div>
+      </div>
+      <label class="btn" for="custCtx">Customer</label>
+      <label class="btn" for="prosCtx">Prospect</label>
+      <label class="btn gray" for="dispositionMenu">Disposition</label>
+      <label class="btn red" for="restrictions">Call Rules</label>
+    </div>
+
+    <div class="menu custCtxMenu">
+      <label class="btn gray" for="start">← Start</label>
+      <label class="btn" for="custOfferCall">Customer + NBA/Offer</label>
+      <label class="btn" for="custNoOfferCall">Customer + No Offer</label>
+      <label class="btn blue" for="custLive">Customer Live Call</label>
+    </div>
+
+    <div class="menu prosCtxMenu">
+      <label class="btn gray" for="start">← Start</label>
+      <label class="btn" for="prosOfferCall">Prospect + NBA/Offer</label>
+      <label class="btn" for="prosNoOfferCall">Prospect + No Offer</label>
+      <label class="btn blue" for="prosLive">Prospect Live Call</label>
+    </div>
+
+    <div class="menu custOfferCallMenu">
+      <label class="btn gray" for="custCtx">← Customer</label>
+      <label class="btn" for="custOfferVM">Voicemail</label>
+      <label class="btn blue" for="custLive">Live Call</label>
+      <label class="btn gray" for="nbaReminder">NBA Reminder</label>
+    </div>
+
+    <div class="menu custNoOfferCallMenu">
+      <label class="btn gray" for="custCtx">← Customer</label>
+      <label class="btn" for="custNoOfferVM">Voicemail</label>
+      <label class="btn blue" for="custLive">Live Call</label>
+    </div>
+
+    <div class="menu prosOfferCallMenu">
+      <label class="btn gray" for="prosCtx">← Prospect</label>
+      <label class="btn" for="prosOfferVM">Voicemail</label>
+      <label class="btn blue" for="prosLive">Live Call</label>
+      <label class="btn gray" for="nbaReminder">NBA Reminder</label>
+    </div>
+
+    <div class="menu prosNoOfferCallMenu">
+      <label class="btn gray" for="prosCtx">← Prospect</label>
+      <label class="btn" for="prosNoOfferVM">Voicemail</label>
+      <label class="btn blue" for="prosLive">Live Call</label>
+    </div>
+
+    <div class="menu custLiveMenu">
+      <label class="btn gray" for="custCtx">← Customer</label>
+      <label class="btn" for="custGreet">Greet</label>
+      <label class="btn" for="custPosition">Positioning</label>
+      <label class="btn red" for="verification">Verify</label>
+      <label class="btn blue" for="greenMenu">Greenprint</label>
+      <label class="btn gold" for="objectionMenu">Objections</label>
+      <label class="btn gray" for="closeMenu">Close</label>
+    </div>
+
+    <div class="menu prosLiveMenu">
+      <label class="btn gray" for="prosCtx">← Prospect</label>
+      <label class="btn" for="prosGreet">Greet</label>
+      <label class="btn" for="prosPosition">Positioning</label>
+      <label class="btn red" for="verification">If Actually Customer</label>
+      <label class="btn blue" for="greenMenu">Greenprint</label>
+      <label class="btn gold" for="objectionMenu">Objections</label>
+      <label class="btn gray" for="closeMenu">Close</label>
+    </div>
+
+    <div class="menu greenMenu">
+      <label class="btn gray" for="start">← Start</label>
+      <label class="btn" for="greenprint">Greenprint</label>
+      <label class="btn" for="answerQuestions">Answer Questions</label>
+      <label class="btn" for="providingSolutions">Solutions</label>
+      <label class="btn gray" for="closeMenu">Close</label>
+    </div>
+
+    <div class="menu objectionMenu">
+      <label class="btn gray" for="start">← Start</label>
+      <label class="btn" for="betterTime">Better Time</label>
+      <label class="btn" for="otherObjection">Other Objection</label>
+      <label class="btn red" for="optOut">Do Not Call</label>
+      <label class="btn gray" for="closeMenu">Close</label>
+    </div>
+
+    <div class="menu closeMenu">
+      <label class="btn gray" for="start">← Start</label>
+      <label class="btn" for="appointment">Appointment</label>
+      <label class="btn" for="closingConsent">Consent / Close</label>
+      <label class="btn" for="followVM">Follow-Up VM</label>
+      <label class="btn gray" for="dispositionMenu">Disposition</label>
+    </div>
+
+    <div class="menu dispositionMenu">
+      <label class="btn gray" for="start">← Start</label>
+      <label class="btn" for="disposeGuide">Disposition Guide</label>
+      <label class="btn" for="nbaReminder">NBA Reminder</label>
+      <label class="btn red" for="restrictions">Call Rules</label>
+    </div>
+  </div>
+
+  <div class="output">
+    <div class="placeholder">
+      <h2>Start: Enter Name, then Customer or Prospect</h2>
+      <p>Current customer/prospect: <span class="namechip customerName">[customer]</span></p>
+      <p>Current banker: <span class="namechip bankerName">Varun</span></p>
+      <p>Branch: <span class="namechip">Chaulkville Branch of Regions</span></p>
+      <div class="smart"><b>Smart suggestion:</b>
+        <div class="suggest">
+          <label for="custCtx">Existing relationship → Customer</label>
+          <label for="prosCtx">No primary relationship → Prospect</label>
+        </div>
+      <label class="btn gray" for="start">← Back</label>
+    </div>
+    </div>
+
+    <div class="script custOfferVM">
+      <h2>Consumer Customer WITH an NBA or Offer</h2>
+      <p>Good morning/afternoon. This is <span class="bankerName">Varun</span>, calling from the Chaulkville Branch of Regions Bank with some exciting news for <span class="customerName">[customer]</span>. Please return my call at [branch phone number], I am in the office until X:XX pm today and work from X:XX am until X:XX pm the remainder of this week. If I don't hear from you in the next day or two, I'll call you back.</p>
+      <div class="smart"><b>Smart suggestions:</b><div class="suggest"><label for="custGreet">If they call back</label><label for="followVM" class="gray">Later follow-up</label></div><label class="btn gray" for="start">← Back</label>
+    </div>
+    </div>
+
+    <div class="script custNoOfferVM">
+      <h2>Consumer Customer WITHOUT an NBA or Offer</h2>
+      <p>Good morning/afternoon <span class="customerName">[customer]</span>. This is <span class="bankerName">Varun</span>, calling from the Chaulkville Branch of Regions Bank. At Regions we believe it is our responsibility to communicate with our customers on a regular basis. Please return my call at [branch phone number], I am in the office until X:XX pm today and work from X:XX am until X:XX pm the remainder of this week. If I don't hear from you in the next day or two, I'll call you back.</p>
+      <div class="smart"><b>Smart suggestions:</b><div class="suggest"><label for="custGreet">If they call back</label><label for="followVM" class="gray">Later follow-up</label></div><label class="btn gray" for="start">← Back</label>
+    </div>
+    </div>
+
+    <div class="script prosOfferVM">
+      <h2>Consumer Prospect WITH an NBA or Offer</h2>
+      <p>Good morning/afternoon <span class="customerName">[customer]</span>. I am <span class="bankerName">Varun</span> the Relationship Banker 2 your personal banker from "your" local Chaulkville Branch of Regions Branch. While I understand Regions may not be your primary bank, we feel everyone should have a personalized plan to help them reach their financial goals. I would love the opportunity to help you build that plan (OR help you build financial confidence) and to discuss an exciting offer we have for you. Again, my name is <span class="bankerName">Varun</span> and I can be reached at [insert branch phone number].</p>
+      <div class="smart"><b>Smart suggestions:</b><div class="suggest"><label for="prosGreet">If they call back</label><label for="otherObjection" class="gold">If hesitant</label></div><label class="btn gray" for="start">← Back</label>
+    </div>
+    </div>
+
+    <div class="script prosNoOfferVM">
+      <h2>Consumer Prospect WITHOUT an NBA or Offer</h2>
+      <p>Good morning/afternoon <span class="customerName">[customer]</span>. I am <span class="bankerName">Varun</span> the Relationship Banker 2 your personal banker from "your" local Chaulkville Branch of Regions Branch. While I understand Regions may not be your primary bank, we feel everyone should have a personalized plan to help them reach their financial goals. I would love the opportunity to help you build that plan (OR help you build financial confidence) and help you reach your goals. Again, my name is <span class="bankerName">Varun</span> and I can be reached at [insert branch phone number],</p>
+      <div class="smart"><b>Smart suggestions:</b><div class="suggest"><label for="prosGreet">If they call back</label><label for="otherObjection" class="gold">If hesitant</label></div><label class="btn gray" for="start">← Back</label>
+    </div>
+    </div>
+
+    <div class="script followVM">
+      <h2>Consumer Customer or Prospect Follow-up</h2>
+      <p>Good morning/afternoon. This is <span class="bankerName">Varun</span>, calling from the Chaulkville Branch of Regions Bank. I am calling to follow-up with <span class="customerName">[customer]</span>. Please return my call at [branch phone number], I am in the office until X:XX pm today and work from X:XX am until X:XX pm the remainder of this week. If I don't hear from you in the next day or two, I'll call you back.</p>
+      <div class="smart"><b>Smart suggestions:</b><div class="suggest"><label for="custGreet">Customer calls back</label><label for="prosGreet">Prospect calls back</label></div><label class="btn gray" for="start">← Back</label>
+    </div>
+    </div>
+
+    <div class="script custGreet">
+      <h2>Customer Live Call: Greet</h2>
+      <p>Hello, May I speak with <span class="customerName">[Customer Name]</span>?
+
+<span class="helper">Allow prospect to acknowledge it is them</span>
+
+<span class="helper">If not available, then inform you will call at a later time</span>
+
+<span class="customerName">[Customer Name]</span>, this is <span class="bankerName">Varun</span>, I am the Relationship Banker 2 your personal banker from "your" local Chaulkville Branch of Regions Branch.
+
+Is now a good time to talk?</p>
+      <div class="smart"><b>Smart suggestions:</b><div class="suggest"><label for="custPosition">Yes, free now</label><label for="betterTime" class="gold">No, busy</label><label for="closingConsent" class="gray">Not available</label><label for="optOut" class="red">Don't call</label></div><label class="btn gray" for="start">← Back</label>
+    </div>
+    </div>
+
+    <div class="script prosGreet">
+      <h2>Prospect Live Call: Greet</h2>
+      <p>Hello, May I speak with <span class="customerName">[Prospect Name]</span>?
+
+<span class="helper">Allow prospect to acknowledge it is them</span>
+
+<span class="helper">If not available, then inform you will call at a later time</span>
+
+<span class="customerName">[Prospect Name]</span>, this is <span class="bankerName">Varun</span>, I am the Relationship Banker 2 your personal banker from "your" local Chaulkville Branch of Regions Branch.
+
+Is now a good time to talk?</p>
+      <div class="smart"><b>Smart suggestions:</b><div class="suggest"><label for="prosPosition">Yes, free now</label><label for="betterTime" class="gold">No, busy</label><label for="closingConsent" class="gray">Not available</label><label for="optOut" class="red">Don't call</label></div><label class="btn gray" for="start">← Back</label>
+    </div>
+    </div>
+
+    <div class="script custPosition">
+      <h2>Customer Positioning Statement</h2>
+      <p>Wonderful. <span class="customerName">[Customer Name]</span>, we know that you lead a busy life, AND respect the fact that you have many choices on where you bank and we appreciate your loyalty.
+
+There are two reasons for my call today.
+
+First, I would like to know if you have any questions related to your banking or financial needs?
+
+<span class="helper">If Customer Has A Reply To Your Question, Move Right</span>
+• <span class="helper">If None, Continue Conversation</span>
+
+The second reason for my call is at Regions, we believe everyone deserves a personalized path to financial confidence; because your financial journey is unique. We have a simple way to help you build your path based on what matters most to you, and it's called Greenprint.
+
+To get started, we begin with your priorities - like ... <span class="helper">[insert 2 of the bolded headings from the list on the next page based on your customer.]</span> Have either of those been on your mind, or are there other financial goals or challenges you are thinking about?
+
+Thanks for sharing that, it really helps me understand what's important to you. As part of your Greenprint I would love to ask a few more questions so we can build a plan that fits your life and supports your goals, would you prefer to continue now over the phone or schedule an appointment with me in the branch?</p>
+      <div class="smart"><b>Smart suggestions:</b><div class="suggest"><label for="answerQuestions">Has question</label><label for="greenprint" class="blue">No question</label><label for="verification" class="red">Before offer/details</label><label for="betterTime" class="gold">Busy</label></div><label class="btn gray" for="start">← Back</label>
+    </div>
+    </div>
+
+    <div class="script prosPosition">
+      <h2>Prospect Positioning Statement</h2>
+      <p>Wonderful. There are two reasons for my call today. First, we know that you lead a busy life, AND respect the fact that you have many choices on where you bank. While I know that Regions is currently not your primary bank, I would like to understand your current financial concerns or what financial goals you are striving to achieve.
+
+• <span class="helper">If Prospect Has A Reply To Your Question, Move Right</span>
+• <span class="helper">If None, Continue Conversation</span>
+
+The second reason for my call, <span class="customerName">[Prospect Name]</span>, is at Regions, we believe everyone deserves a personalized path to financial confidence; because your financial journey is unique. We have a simple way to help you build your path based on what matters most to you, and it's called Greenprint.
+
+To get started, we begin with your priorities - like...<span class="helper">[insert 2 of the bolded headings from the list on the next page based on your customer.]</span> Have either of those been on your mind, or are there other financial goals or challenges you are thinking about?
+
+Thanks for sharing that, it really helps me understand what's important to you. As part of your Greenprint I would love to ask a few more questions so we can build a plan that fits your life and supports your goals.
+Should you decided to bank with Regions, we can talk more about an exciting offer I have just for you.
+Would you prefer to continue now over the phone or schedule an appointment with me in the branch?</p>
+      <div class="smart"><b>Smart suggestions:</b><div class="suggest"><label for="answerQuestions">Has question</label><label for="greenprint" class="blue">No question</label><label for="verification" class="red">If actually customer</label><label for="otherObjection" class="gold">Bank elsewhere</label></div><label class="btn gray" for="start">← Back</label>
+    </div>
+    </div>
+
+    <div class="script verification">
+      <h2>Outbound Verification Procedures</h2>
+      <p><span class="helper">Before making any offer or releasing any information concerning their Regions relationship(s) you must obtain:</span>
+
+Customer's Date of Birth (to confirm that the person is at least 21 years old), AND
+
+<span class="helper">2 of the following primary verification items - at least one of these items must be a Recent Transaction:</span>
+
+<span class="helper">• Recent Transaction</span>
+- Amount of deposit to/withdrawal from Dep Acct
+- Amount of monthly payment to LOC or IL, or
+- Name of Company sending a Direct Deposit
+Branch or Channel of opening Dep Acct / Credit Limit on LOC / Amount Financed on IL Opening date of Dep Acct / Interest Rate on IL or CD / Opening Amount for CD
+
+<span class="helper">Customer's responses must conform to the following:</span>
+<span class="helper">• Rounding up/down to the nearest thousand dollars is acceptable.</span>
+<span class="helper">• Rounding up/down to the nearest tenth of a percent is acceptable.</span>
+<span class="helper">• Month, day and year must be within 2 days before or after the date on the system.</span>
+
+<span class="helper">If you are only able to obtain only 1 of the primary verification items above, you may obtain 1 alternate verification item from below:</span>
+Product Type - If customer has a Regions at Work checking account a statement of, "I don't know, my employer set this up for me" is acceptable.
+Email address
+Term of CD</p>
+      <div class="stop">Hard stop: do not make an offer or release Regions relationship information before required verification is complete.</div>
+      <div class="smart"><b>Smart suggestions:</b><div class="suggest"><label for="greenprint" class="blue">Verified</label><label for="appointment" class="gray">Unable to verify</label><label for="optOut" class="red">Refuses / don't call</label></div><label class="btn gray" for="start">← Back</label>
+    </div>
+    </div>
+
+    <div class="script greenprint">
+      <h2>Greenprint Transition</h2>
+      <p>To get started, we begin with your priorities - like ... <span class="helper">[insert 2 of the bolded headings from the list on the next page based on your customer.]</span> Have either of those been on your mind, or are there other financial goals or challenges you are thinking about?
+
+Thanks for sharing that, it really helps me understand what's important to you. As part of your Greenprint I would love to ask a few more questions so we can build a plan that fits your life and supports your goals, would you prefer to continue now over the phone or schedule an appointment with me in the branch?</p>
+      <div class="smart"><b>Smart suggestions:</b><div class="suggest"><label for="providingSolutions">Continue now</label><label for="appointment" class="gray">Schedule branch</label><label for="answerQuestions" class="blue">Asks question</label><label for="betterTime" class="gold">Busy</label></div><label class="btn gray" for="start">← Back</label>
+    </div>
+    </div>
+
+    <div class="script answerQuestions">
+      <h2>Answer Questions / Concerns</h2>
+      <p><span class="helper">Answer the Customer's questions or address any concerns, then return to the conversation.</span></p>
+      <div class="smart"><b>Smart suggestions:</b><div class="suggest"><label for="greenprint" class="blue">Return to Greenprint</label><label for="verification" class="red">Needs account details</label><label for="appointment" class="gray">Needs appointment</label></div><label class="btn gray" for="start">← Back</label>
+    </div>
+    </div>
+
+    <div class="script providingSolutions">
+      <h2>Providing Solutions</h2>
+      <p><span class="helper">Use Regions Greenprint to provide value when presenting solutions by relating the solution to the customer's specific need, any relevant NBA and using the Regions Greenprint recommended AGE tool when provided:</span>
+
+<span class="customerName">[Customer Name]</span>, during our conversation you mentioned that ____ was important to you. Based on our conversation today, here are the recommendations to help you meet your goals.
+
+<span class="helper">Address customer concerns in 3 steps:</span>
+Paraphrase and Validate Concern
+Clarify with no more than 2 questions
+Answer Confidently
+
+<span class="helper">Use "Learn More" in Regions Greenprint to review key highlights and benefits of the Recommendations</span>
+<span class="helper">Use relevant Calculators to help present your solution.</span></p>
+      <div class="smart"><b>Smart suggestions:</b><div class="suggest"><label for="closingConsent">Ready to proceed</label><label for="answerQuestions" class="blue">Has concern</label><label for="appointment" class="gray">Needs branch</label></div><label class="btn gray" for="start">← Back</label>
+    </div>
+    </div>
+
+    <div class="script closingConsent">
+      <h2>Closing / Consent</h2>
+      <p><span class="helper">ALWAYS gain Customer Consent to move forward with a Solution.</span>
+
+<span class="helper">Example would be:</span> "Do you see what I see? Using this option, you could save $____.
+May I go ahead and add this service / make this referral / take this application for you?"</p>
+      <div class="smart"><b>Smart suggestions:</b><div class="suggest"><label for="disposeGuide">After call: disposition</label><label for="appointment" class="gray">Set appointment</label><label for="otherObjection" class="gold">Declines</label></div><label class="btn gray" for="start">← Back</label>
+    </div>
+    </div>
+
+    <div class="script appointment">
+      <h2>Appointment Setting</h2>
+      <p><span class="customerName">[Customer Name]</span>, I know your time is valuable.
+
+When would be a better time for us to talk?
+
+• <span class="helper">If they give a date/time:</span>
+Okay, great! I look forward to speaking with you then.
+You will receive an email with our appointment time.
+Thank you, and I hope you have a great rest of your day.
+
+Perfect! During our conversation, I will be capturing notes digitally so that I can send you a summary of our conversation.
+
+There are several places we can begin the conversation, but as this is about you, tell me where you feel the most confident financially?</p>
+      <div class="smart"><b>Smart suggestions:</b><div class="suggest"><label for="closingConsent">Appointment confirmed</label><label for="betterTime" class="gold">Needs different time</label><label for="disposeGuide" class="gray">After call</label></div><label class="btn gray" for="start">← Back</label>
+    </div>
+    </div>
+
+    <div class="script betterTime">
+      <h2>If Customer / Prospect Is Busy</h2>
+      <p><span class="customerName">[Customer Name]</span>, I know your time is valuable.
+
+When would be a better time for us to talk?
+
+<span class="helper">If they give a date/time:</span>
+Okay, great! I look forward to speaking with you then.
+You will receive an email with our appointment time.
+Thank you, and I hope you have a great rest of your day.</p>
+      <div class="smart"><b>Smart suggestions:</b><div class="suggest"><label for="appointment">Gives date/time</label><label for="otherObjection" class="gold">Another objection</label><label for="closingConsent" class="gray">End respectfully</label></div><label class="btn gray" for="start">← Back</label>
+    </div>
+    </div>
+
+    <div class="script otherObjection">
+      <h2>If They Give Another Objection</h2>
+      <p><span class="helper">If they give another objection (i.e. Don't call, I'll call you):</span>
+
+<span class="customerName">[Customer Name]</span>, I want to be respectful of your time.
+
+I am here for you if you have any questions, and I greatly appreciate you as a Regions customer.
+
+Thank you, and I hope you have great rest of your day.
+
+<span class="customerName">[Customer Name]</span>, I understand OR I am glad to hear you are comfortable.
+
+As I mentioned, other customers have found value in taking a fresh look at how they are currently banking and how that is supporting their needs/goals.
+
+I would really like to set a time that's convenient for you to have the same conversation.</p>
+      <div class="smart"><b>Smart suggestions:</b><div class="suggest"><label for="appointment">Agrees to time</label><label for="closingConsent" class="gray">Still declines</label><label for="optOut" class="red">Don't call again</label></div><label class="btn gray" for="start">← Back</label>
+    </div>
+    </div>
+
+    <div class="script optOut">
+      <h2>Opting Out</h2>
+      <p><span class="helper">If a customer wishes to Opt Out OR says anything like, "Don't Call Me Again."</span>
+
+<span class="helper">Confirm that the intention of the customer is to opt out of future marketing/sales related phone calls and opt them out.</span>
+
+<span class="helper">If the customer disconnects the call prior to confirmation, be conservative and opt the customer out of future marketing/sales calls.</span>
+
+<span class="helper">To Opt Out the customer, go to http://donotcall/inputform.aspx</span></p>
+      <div class="smart"><b>Smart suggestions:</b><div class="suggest"><label for="disposeGuide">Disposition / document</label><label for="start" class="gray">End call</label></div><label class="btn gray" for="start">← Back</label>
+    </div>
+    </div>
+
+    <div class="script restrictions">
+      <h2>Call Restrictions</h2>
+      <p><span class="helper">INDIANA: Restrictions more stringent than federal law</span>
+DO NOT CALL Indiana customers UNLESS you have entered and verified their number is NOT on the Do Not Call List.
+
+<span class="helper">KENTUCKY & TEXAS: More stringent call times than federal law</span>
+DO NOT CALL these customers outside of:
+Kentucky 10 AM-9 PM CST
+Texas 9 AM-9 PM CST
+
+<span class="helper">KENTUCKY, MISSISSIPPI & NORTH CAROLINA</span>
+If an objection is encountered or disinterest is shown, you must end the call promptly.</p>
+      <div class="smart"><b>Smart suggestions:</b><div class="suggest"><label for="start">Back to Start</label><label for="optOut" class="red">Opt-out request</label></div><label class="btn gray" for="start">← Back</label>
+    </div>
+    </div>
+
+    <div class="script disposeGuide">
+      <h2>Disposition Guide</h2>
+      <p><span class="helper">Tier 1 NBA: Urgent contacts which must be presented to the customer and marked as discussed to be considered complete.</span>
+<span class="helper">• Discussed - You presented the information.</span>
+<span class="helper">• Not Discussed - You did not discuss the information.</span>
+
+<span class="helper">Informative NBA: educational, milestone messaging, and simple guidance.</span>
+<span class="helper">• Discussed - You presented the information.</span>
+<span class="helper">• Not Discussed - You did not discuss their information.</span>
+
+<span class="helper">Offer NBA: Offers for retention, relationship growth, acquisition, or activation.</span>
+<span class="helper">• Yes - Fulfilled - Customer has consented to opening solution.</span>
+<span class="helper">• Yes - Referred - The solution was discussed with the customer and was referred to a Business Group partner or Licensed banker.</span>
+<span class="helper">• No - Declined - The solution was offered to the customer but they declined.</span>
+<span class="helper">• Not Contacted - Left Message.</span>
+<span class="helper">• Not Contacted - Wrong Contact Info.</span>
+<span class="helper">• Not Presented - When you contacted customer, but the solution was not discussed.</span></p>
+      <div class="smart"><b>Smart suggestions:</b><div class="suggest"><label for="start">New call</label><label for="followVM" class="gray">Follow-up needed</label></div><label class="btn gray" for="start">← Back</label>
+    </div>
+    </div>
+
+    <div class="script nbaReminder">
+      <h2>NBA Reminder</h2>
+      <p><span class="helper">It is the expectation that the outbound call NBA is a reason to call, but not the purpose of the call. Bankers should focus on achieving an opportunity to conduct a Greenprint conversation.</span></p>
+      <div class="smart"><b>Smart suggestions:</b><div class="suggest"><label for="custLive">Customer live flow</label><label for="prosLive">Prospect live flow</label></div><label class="btn gray" for="start">← Back</label>
+    </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function clean(value, fallback){
+  value = (value || "").trim();
+  return value ? value : fallback;
+}
+function updateNames(){
+  var customer = clean(document.getElementById("customerNameInput").value, "[customer]");
+  var banker = clean(document.getElementById("bankerNameInput").value, "Varun");
+
+  document.querySelectorAll(".customerName").forEach(function(el){ el.textContent = customer; });
+  document.querySelectorAll(".bankerName").forEach(function(el){ el.textContent = banker; });
+
+  try{
+    localStorage.setItem("regions_customer_name", customer === "[customer]" ? "" : customer);
+    localStorage.setItem("regions_banker_name", banker);
+  }catch(e){}
+}
+(function(){
+  try{
+    var savedCustomer = localStorage.getItem("regions_customer_name") || "";
+    var savedBanker = localStorage.getItem("regions_banker_name") || "Varun";
+    document.getElementById("customerNameInput").value = savedCustomer;
+    document.getElementById("bankerNameInput").value = savedBanker || "Varun";
+  }catch(e){}
+  document.getElementById("customerNameInput").addEventListener("input", updateNames);
+  document.getElementById("bankerNameInput").addEventListener("input", updateNames);
+  updateNames();
+})();
+</script>
+</body>
+</html>
